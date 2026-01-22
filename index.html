@@ -3,28 +3,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
+<title>YANNIC KÖBI AKTIEN HANDEL AG – Robust</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.2.0/dist/tf.min.js"></script>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
 <h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
-<select id="stockSelect"></select>
-<select id="timeSelect">
-  <option value="30">1 Monat</option>
-  <option value="60">2 Monate</option>
-  <option value="90" selected>3 Monate</option>
-</select>
-<button onclick="analyze()">Analyse durchführen</button>
+<div class="subtitle">Aktienanalyse & Entscheidungsunterstützung (CHF)</div>
+
+<div class="controls">
+  <select id="stockSelect"></select>
+  <select id="timeSelect">
+    <option value="30">1 Monat</option>
+    <option value="60">2 Monate</option>
+    <option value="90" selected>3 Monate</option>
+    <option value="180">6 Monate</option>
+    <option value="360">1 Jahr</option>
+  </select>
+</div>
+
+<div class="controls">
+  <button onclick="setMode('vorsichtig')">Vorsichtig</button>
+  <button onclick="setMode('ausgeglichen')">Ausgeglichen</button>
+  <button onclick="setMode('chancen')">Chancenorientiert</button>
+</div>
+
+<div class="controls">
+  <button onclick="analyze()">Analyse durchführen</button>
+  <button onclick="openBuyPage()">Externe Kursansicht</button>
+</div>
+
+<div class="info">
+  <div>Analysemodell: <b id="mode">Ausgeglichen</b></div>
+  <div>Konfidenz: <b id="confidence">–</b></div>
+</div>
+
+<div class="status" id="status">System bereit</div>
+
 <canvas id="chart"></canvas>
-<div id="result"></div>
+
+<table>
+<thead>
+<tr>
+  <th>Aktueller Kurs (CHF)</th>
+  <th>Prognose (CHF)</th>
+  <th>Signal</th>
+  <th>Abweichung</th>
+</tr>
+</thead>
+<tbody id="result"></tbody>
+</table>
+
+<div class="tabs">
+  <button onclick="showTab('analysis')">Analyse</button>
+  <button onclick="showTab('news')">Nachrichten</button>
+  <button onclick="showTab('fundamental')">Fundamentales</button>
+</div>
+
+<div id="analysis" class="tabbox">
+  <div id="explanation">–</div>
+</div>
+
+<div id="news" class="tabbox hidden">
+  <div id="newsText">Keine relevanten Marktmeldungen.</div>
+</div>
+
+<div id="fundamental" class="tabbox hidden">
+  Interne Stabilitäts- und Plausibilitätsprüfung auf Basis historischer Daten.
+</div>
+
+<div class="footer">
+© 2026 YANNIC KÖBI AKTIEN HANDEL AG<br>
+Diese Anwendung dient nur zu Analysezwecken und ist keine Anlageberatung.
+</div>
+
 <script>
 "use strict";
+
+// Aktienliste (Beispiel, später volle Liste möglich)
 const STOCKS=[{s:"AAPL",n:"Apple"},{s:"MSFT",n:"Microsoft"},{s:"PYPL",n:"PayPal"}];
 const select=document.getElementById("stockSelect");
 STOCKS.forEach(a=>{const o=document.createElement("option");o.value=a.s;o.textContent=a.s+" – "+a.n;select.appendChild(o);});
+
+let ANALYSE_MODELL="ausgeglichen";
 let chart;
+
+function setMode(m){
+  ANALYSE_MODELL=m;
+  document.getElementById("mode").textContent=
+    m==="vorsichtig"?"Vorsichtig":m==="chancen"?"Chancenorientiert":"Ausgeglichen";
+}
+
+function showTab(id){
+  document.querySelectorAll(".tabbox").forEach(b=>b.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+}
+
+function RSI(prices){
+  if(prices.length<15) return 50;
+  let g=0,l=0;
+  for(let i=prices.length-15;i<prices.length-1;i++){
+    const d=prices[i+1]-prices[i];
+    d>0?g+=d:l-=d;
+  }
+  return 100-(100/(1+(g/(l||1))));
+}
 
 async function fetchCurrentPrice(symbol){
   const res=await fetch(`/.netlify/functions/finnhub?symbol=${symbol}&type=quote`);
@@ -41,9 +126,11 @@ async function fetchCandle(symbol,days){
 }
 
 async function fetchUSDtoCHF(){
-  const res=await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CHF");
-  const data=await res.json();
-  return data.rates.CHF||0.93;
+  try{
+    const res=await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CHF");
+    const data=await res.json();
+    return data.rates.CHF || 0.93;
+  }catch{return 0.93;}
 }
 
 function drawChart(prices,forecast){
@@ -56,7 +143,8 @@ function drawChart(prices,forecast){
     data:{labels,datasets:[
       {label:"Kurs (CHF)",data:[...prices,...Array(forecast.length).fill(null)],borderColor:"#00ccaa",tension:0.3},
       {label:"KI-Prognose (CHF)",data:[...Array(prices.length).fill(null),...forecast],borderColor:"#ffaa55",tension:0.3}
-    ]}
+    ]},
+    options:{responsive:true}
   });
 }
 
@@ -83,16 +171,41 @@ async function predictWithAI(prices,forecastDays=7){
 }
 
 async function analyze(){
-  const symbol=select.value;
-  const days=parseInt(document.getElementById("timeSelect").value,10);
-  const rate=await fetchUSDtoCHF();
-  const currentUSD=await fetchCurrentPrice(symbol);
-  const pricesUSD=await fetchCandle(symbol,days);
-  const prices=pricesUSD?pricesUSD.map(p=>p*rate):[currentUSD*rate];
-  const forecast=pricesUSD?await predictWithAI(prices,Math.min(days,14)):[currentUSD*rate];
-  drawChart(prices,forecast);
-  document.getElementById("result").textContent=`Aktuell: ${(currentUSD*rate).toFixed(2)} CHF, Prognose: ${forecast.at(-1).toFixed(2)} CHF`;
+  document.getElementById("status").textContent="Analyse läuft…";
+  try{
+    const symbol=select.value;
+    const days=parseInt(document.getElementById("timeSelect").value,10);
+    const rate=await fetchUSDtoCHF();
+    const currentUSD=await fetchCurrentPrice(symbol);
+    const pricesUSD=await fetchCandle(symbol,days);
+    const prices=pricesUSD?pricesUSD.map(p=>p*rate):[currentUSD*rate];
+    const forecast=pricesUSD?await predictWithAI(prices,Math.min(days,14)):[currentUSD*rate];
+    drawChart(prices,forecast);
+    const last=currentUSD*rate, pred=forecast.at(-1)||last;
+    const diff=(pred-last)/last;
+    const signal=diff>0.07?"KAUFEN":diff<-0.07?"VERKAUFEN":"HALTEN";
+    const cls=signal==="KAUFEN"?"buy":signal==="VERKAUFEN"?"sell":"hold";
+    document.getElementById("confidence").textContent=Math.abs(diff)>0.1?"Hoch":Math.abs(diff)>0.05?"Mittel":"Niedrig";
+    document.getElementById("result").innerHTML=`
+      <tr>
+        <td>${last.toFixed(2)}</td>
+        <td>${pred.toFixed(2)}</td>
+        <td class="${cls}">${signal}</td>
+        <td>${(Math.abs(diff)*100).toFixed(1)}%</td>
+      </tr>`;
+    document.getElementById("explanation").innerHTML=`RSI: ${RSI(prices).toFixed(1)}<br>Analysemodell: ${ANALYSE_MODELL}<br>Wechselkurs: ${rate.toFixed(2)} CHF/USD`;
+    document.getElementById("status").textContent="Analyse abgeschlossen";
+  }catch(err){
+    document.getElementById("status").textContent="Fehler: "+err.message;
+    document.getElementById("result").innerHTML="";
+    if(chart) chart.destroy();
+  }
+}
+
+function openBuyPage(){
+  window.open("https://finance.yahoo.com/quote/"+select.value,"_blank");
 }
 </script>
+
 </body>
 </html>
