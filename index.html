@@ -3,54 +3,44 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AKTIEN HANDEL AG</title>
+<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
 
-<!-- Chart.js -->
+<link rel="stylesheet" href="selflernendeki_style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
-
-<!-- CSS -->
-<link rel="stylesheet" href="selflernendeki_style.css">
-
 </head>
 <body>
 
-<h1>AKTIEN HANDEL AG</h1>
+<h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
 
-<!-- Aktienauswahl & Analyse starten -->
 <div class="controls">
   <select id="stockSelect"></select>
   <button id="analyzeBtn">Analyse starten</button>
 </div>
 
-<!-- KI-Modus Buttons -->
 <div class="controls">
   <button id="safeBtn">🟢 Vorsichtig</button>
   <button id="normalBtn">🟡 Normal</button>
   <button id="aggressiveBtn">🔴 Aggressiv</button>
 </div>
 
-<!-- Statusanzeigen -->
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
-  <div>KI-Genauigkeit: <b id="accuracy">70%</b></div>
-  <div>Lernfortschritt: <b id="learning">0%</b></div>
-  <div>Tagesprognosen: <b id="dailyCount">0</b> / 100</div>
+  <div>Tagesprognosen: <b id="dailyCount">0</b></div>
+  <div>KI-Genauigkeit: <b id="accuracy">–</b></div>
+  <div>Lernfortschritt: <b id="learning">–</b></div>
 </div>
 
 <div class="status" id="status">Bereit</div>
 
-<!-- Legende für Ereignisse -->
 <div class="legend-box">
   <div><span class="legend-color" style="background:#00ff66"></span> Positives Ereignis</div>
   <div><span class="legend-color" style="background:#ff5555"></span> Negatives Ereignis</div>
 </div>
 
-<!-- Chart -->
 <canvas id="chart"></canvas>
 
-<!-- Ergebnisse Tabelle -->
 <table>
 <thead>
 <tr>
@@ -63,29 +53,36 @@
 <tbody id="result"></tbody>
 </table>
 
-<!-- Modell-Erklärung -->
 <div class="box">
 <h3>🧠 Modell-Erklärung</h3>
 <div id="explanation">–</div>
 </div>
 
-<!-- Fundamentale Einordnung -->
 <div class="box">
 <h3>🏦 Fundamentale Einordnung</h3>
 <div id="fundamental">–</div>
 </div>
 
-<!-- Footer -->
 <div class="footer">
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
-<!-- JS-Module einbinden -->
-<script type="module" src="selflernendeki_part1.js"></script>
-<script type="module" src="selflernendeki_part2.js"></script>
-<script type="module" src="selflernendeki_part3.js"></script>
-<script type="module" src="selflernendeki_part4.js"></script>
-<script type="module" src="selflernendeki_part5.js"></script>
+<!-- ================= JS MODULES ================= -->
+<script type="module">
+import { fillStockSelect } from './selflernendeki_part1.js';
+import { initButtons } from './selflernendeki_part2.js';
+import { EMA, RSI, MACD } from './selflernendeki_part3.js';
+import { predict, confidenceScore } from './selflernendeki_part4.js';
+import { analyze, drawChart, EVENTS } from './selflernendeki_part5.js';
+
+document.addEventListener('DOMContentLoaded', ()=>{
+    // Aktien Dropdown füllen
+    fillStockSelect(document.getElementById('stockSelect'));
+
+    // Buttons initialisieren (Analyse starten, KI-Modus)
+    initButtons();
+});
+</script>
 
 </body>
 </html>
