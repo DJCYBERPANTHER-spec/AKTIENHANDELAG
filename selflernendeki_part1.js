@@ -1,10 +1,10 @@
-/* ================= API KEYS ================= */
-const API_KEYS = ["GH13X9P8J48O0UPW","KAQ3H4TQELGSHL"]; // Alphavantage
-let apiIndex = 0;
-const USD_TO_CHF = 0.91; // Umrechnung
+/* ================= EXPORTS ================= */
+export const API_KEYS = ["GH13X9P8J48O0UPW","KAQ3H4TQELGSHL"];
+export let apiIndex = 0;
+export const USD_TO_CHF = 0.91;
 
 /* ================= AKTIEN ================= */
-const STOCKS = [
+export const STOCKS = [
   // TECH
   {s:"AAPL", n:"Apple"},{s:"MSFT", n:"Microsoft"},{s:"NVDA", n:"NVIDIA"},{s:"AMD", n:"AMD"},
   {s:"INTC", n:"Intel"},{s:"TSLA", n:"Tesla"},{s:"META", n:"Meta"},{s:"GOOGL", n:"Alphabet"},
@@ -46,30 +46,32 @@ const STOCKS = [
   {s:"T", n:"AT&T"},{s:"VZ", n:"Verizon"},{s:"TMUS", n:"T-Mobile US"},{s:"CMCSA", n:"Comcast"},{s:"FOX", n:"Fox Corp"}
 ];
 
-/* ================= SELECT-FÜLLEN ================= */
-const select = document.getElementById("stockSelect");
-STOCKS.forEach(a=>{
-  const o=document.createElement("option");
-  o.value=a.s;
-  o.textContent=`${a.s} – ${a.n}`;
-  select.appendChild(o);
-});
 
-/* ================= API ABFRAGE ================= */
-async function getHistory(symbol){
-    let key = API_KEYS[apiIndex];
-    try {
-        const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
-        const d = await r.json();
-        if(d.Note || d["Error Message"]){
-            apiIndex = (apiIndex+1) % API_KEYS.length;
-            throw "API-Limit erreicht – bitte 60 Sekunden warten";
-        }
-        return Object.entries(d["Time Series (Daily)"])
-            .slice(0,90)
-            .reverse()
-            .map(([date,v])=>({date,price:parseFloat(v["4. close"])*USD_TO_CHF}));
-    } catch(e){
-        throw e;
-    }
+/* ================= SELECT-FÜLLEN ================= */
+export function fillStockSelect(select){
+  STOCKS.forEach(a=>{
+    const o=document.createElement("option");
+    o.value=a.s;
+    o.textContent=`${a.s} – ${a.n}`;
+    select.appendChild(o);
+  });
+}
+
+/* ================= API FETCH ================= */
+export async function getHistory(symbol){
+  const key = API_KEYS[apiIndex];
+  try {
+      const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
+      const d = await r.json();
+      if(d.Note || d["Error Message"]){
+          apiIndex = (apiIndex+1) % API_KEYS.length;
+          throw "API-Limit erreicht – bitte 60 Sekunden warten";
+      }
+      return Object.entries(d["Time Series (Daily)"])
+          .slice(0,90)
+          .reverse()
+          .map(([date,v])=>({date,price:parseFloat(v["4. close"])*USD_TO_CHF}));
+  } catch(e){
+      throw e;
+  }
 }
