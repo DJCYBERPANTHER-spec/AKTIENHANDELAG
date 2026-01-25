@@ -17,33 +17,40 @@
 
 <h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
 
+<!-- Aktienauswahl & Analyse starten -->
 <div class="controls">
   <select id="stockSelect"></select>
   <button id="analyzeBtn">Analyse starten</button>
 </div>
 
+<!-- KI-Modus Buttons -->
 <div class="controls">
   <button id="safeBtn">🟢 Vorsichtig</button>
   <button id="normalBtn">🟡 Normal</button>
   <button id="aggressiveBtn">🔴 Aggressiv</button>
 </div>
 
+<!-- Statusanzeigen -->
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
-  <div>KI-Genauigkeit: <b id="accuracy">–</b></div>
-  <div>Prognosen heute: <b id="dailyCount">0</b>/100</div>
+  <div>KI-Genauigkeit: <b id="accuracy">70%</b></div>
+  <div>Lernfortschritt: <b id="learning">0%</b></div>
+  <div>Tagesprognosen: <b id="dailyCount">0</b> / 100</div>
 </div>
 
 <div class="status" id="status">Bereit</div>
 
+<!-- Legende für Ereignisse -->
 <div class="legend-box">
   <div><span class="legend-color" style="background:#00ff66"></span> Positives Ereignis</div>
   <div><span class="legend-color" style="background:#ff5555"></span> Negatives Ereignis</div>
 </div>
 
+<!-- Chart -->
 <canvas id="chart"></canvas>
 
+<!-- Ergebnisse Tabelle -->
 <table>
 <thead>
 <tr>
@@ -56,21 +63,24 @@
 <tbody id="result"></tbody>
 </table>
 
+<!-- Modell-Erklärung -->
 <div class="box">
 <h3>🧠 Modell-Erklärung</h3>
 <div id="explanation">–</div>
 </div>
 
+<!-- Fundamentale Einordnung -->
 <div class="box">
 <h3>🏦 Fundamentale Einordnung</h3>
 <div id="fundamental">–</div>
 </div>
 
+<!-- Footer -->
 <div class="footer">
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
-<!-- JS-Teile einbinden -->
+<!-- JS-Module einbinden -->
 <script type="module" src="selflernendeki_part1.js"></script>
 <script type="module" src="selflernendeki_part2.js"></script>
 <script type="module" src="selflernendeki_part3.js"></script>
