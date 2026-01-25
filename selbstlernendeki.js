@@ -1,63 +1,47 @@
 /* ================= API & Konfiguration ================= */
 const API_KEYS = ["GH13X9P8J48O0UPW","KAQ3H4TQELGSHL"];
 let apiIndex = 0;
-let USD_TO_CHF = 0.91; // Standard
-
-// Vorhersagezeitraum in Tagen
-let forecastDays = 7;
+let USD_TO_CHF = 0.91; // Standardkurs
 
 let KI_MODE = "normal";
+let forecastDays = 7;
+
 function setMode(m){
   KI_MODE = m;
   document.getElementById("mode").textContent = m.charAt(0).toUpperCase()+m.slice(1);
 }
 
 /* ================= AKTIEN ================= */
-// 160+ Aktien (Beispiele, kann beliebig erweitert werden)
 const STOCKS = [
-  {s:"AAPL", n:"Apple"}, {s:"MSFT", n:"Microsoft"}, {s:"NVDA", n:"NVIDIA"},
-  {s:"AMD", n:"AMD"}, {s:"INTC", n:"Intel"}, {s:"TSLA", n:"Tesla"},
-  {s:"META", n:"Meta"}, {s:"GOOGL", n:"Alphabet"}, {s:"AMZN", n:"Amazon"},
-  {s:"NFLX", n:"Netflix"}, {s:"ORCL", n:"Oracle"}, {s:"IBM", n:"IBM"},
-  {s:"CSCO", n:"Cisco"}, {s:"ADBE", n:"Adobe"}, {s:"CRM", n:"Salesforce"},
-  {s:"SQ", n:"Block, Inc."}, {s:"PYPL", n:"PayPal"}, {s:"INTU", n:"Intuit"},
-  {s:"SNOW", n:"Snowflake"}, {s:"ADSK", n:"Autodesk"}, {s:"NOW", n:"ServiceNow"},
-  {s:"JPM", n:"JPMorgan"}, {s:"BAC", n:"Bank of America"}, {s:"WFC", n:"Wells Fargo"},
-  {s:"GS", n:"Goldman Sachs"}, {s:"MS", n:"Morgan Stanley"}, {s:"V", n:"Visa"},
-  {s:"MA", n:"Mastercard"}, {s:"AXP", n:"American Express"}, {s:"SCHW", n:"Charles Schwab"},
-  {s:"BK", n:"Bank of New York Mellon"}, {s:"COF", n:"Capital One"},
-  {s:"PG", n:"Procter & Gamble"}, {s:"KO", n:"Coca-Cola"}, {s:"PEP", n:"PepsiCo"},
-  {s:"WMT", n:"Walmart"}, {s:"COST", n:"Costco"}, {s:"MCD", n:"McDonald's"},
-  {s:"NKE", n:"Nike"}, {s:"SBUX", n:"Starbucks"}, {s:"HD", n:"Home Depot"},
-  {s:"LOW", n:"Lowe's"}, {s:"TJX", n:"TJX Companies"}, {s:"DG", n:"Dollar General"},
-  {s:"DIS", n:"Disney"}, {s:"LYV", n:"Live Nation"}, {s:"MELI", n:"MercadoLibre"},
-  {s:"BA", n:"Boeing"}, {s:"CAT", n:"Caterpillar"}, {s:"GE", n:"General Electric"},
-  {s:"MMM", n:"3M"}, {s:"HON", n:"Honeywell"}, {s:"UPS", n:"UPS"},
-  {s:"FDX", n:"FedEx"}, {s:"LMT", n:"Lockheed Martin"}, {s:"RTX", n:"Raytheon Technologies"},
-  {s:"DAL", n:"Delta Air Lines"}, {s:"UAL", n:"United Airlines"}, {s:"XOM", n:"Exxon Mobil"},
-  {s:"CVX", n:"Chevron"}, {s:"COP", n:"ConocoPhillips"}, {s:"BP", n:"BP"},
-  {s:"TOT", n:"TotalEnergies"}, {s:"SLB", n:"Schlumberger"},
-  {s:"JNJ", n:"Johnson & Johnson"}, {s:"PFE", n:"Pfizer"}, {s:"MRK", n:"Merck"},
-  {s:"ABBV", n:"AbbVie"}, {s:"BMY", n:"Bristol Myers Squibb"}, {s:"LLY", n:"Eli Lilly"},
-  {s:"AMGN", n:"Amgen"}, {s:"GILD", n:"Gilead Sciences"}, {s:"MDT", n:"Medtronic"},
-  {s:"SNY", n:"Sanofi"}, {s:"NESN.SW", n:"Nestlé"}, {s:"ROG.SW", n:"Roche"},
-  {s:"NOVN.SW", n:"Novartis"}, {s:"UBSG.SW", n:"UBS"}, {s:"ZURN.SW", n:"Zurich Insurance"},
-  {s:"CFR.SW", n:"Credit Suisse"}, {s:"SAP.DE", n:"SAP"}, {s:"ASML.AS", n:"ASML Holding"},
-  {s:"AIR.PA", n:"Airbus"}, {s:"DAI.DE", n:"Daimler"}, {s:"BN.PA", n:"BNP Paribas"},
-  {s:"SIE.DE", n:"Siemens"}, {s:"ENGI.PA", n:"Engie"}, {s:"VOW3.DE", n:"Volkswagen"},
-  {s:"ORA.PA", n:"Orange"}, {s:"SAN.PA", n:"Sanofi"}, {s:"7203.T", n:"Toyota"},
-  {s:"6758.T", n:"Sony"}, {s:"9984.T", n:"SoftBank"}, {s:"6861.T", n:"Keyence"},
-  {s:"8035.T", n:"Toshiba"}, {s:"6752.T", n:"Panasonic"}, {s:"BABA", n:"Alibaba"},
-  {s:"TCEHY", n:"Tencent"}, {s:"JD", n:"JD.com"}, {s:"INFY", n:"Infosys"},
-  {s:"HDB", n:"HDFC Bank"}, {s:"ICICIBANK.NS", n:"ICICI Bank"}, {s:"RELIANCE.BO", n:"Reliance Industries"},
-  {s:"NTES", n:"NetEase"}, {s:"PDD", n:"Pinduoduo"}, {s:"T", n:"AT&T"}, {s:"VZ", n:"Verizon"},
-  {s:"TMUS", n:"T-Mobile US"}, {s:"CMCSA", n:"Comcast"}, {s:"FOX", n:"Fox Corp"}, {s:"DISCA", n:"Discovery Inc."},
-  {s:"GM", n:"General Motors"}, {s:"F", n:"Ford"}, {s:"KO", n:"Coca-Cola"}, {s:"PEP", n:"PepsiCo"},
-  {s:"MCD", n:"McDonald's"}, {s:"WMT", n:"Walmart"}, {s:"COST", n:"Costco"}, {s:"HD", n:"Home Depot"},
-  {s:"LOW", n:"Lowe's"}, {s:"NKE", n:"Nike"}, {s:"SBUX", n:"Starbucks"}
+  {s:"AAPL", n:"Apple"},{s:"MSFT", n:"Microsoft"},{s:"NVDA", n:"NVIDIA"},{s:"AMD", n:"AMD"},
+  {s:"INTC", n:"Intel"},{s:"TSLA", n:"Tesla"},{s:"META", n:"Meta"},{s:"GOOGL", n:"Alphabet"},
+  {s:"AMZN", n:"Amazon"},{s:"NFLX", n:"Netflix"},{s:"ORCL", n:"Oracle"},{s:"IBM", n:"IBM"},
+  {s:"CSCO", n:"Cisco"},{s:"ADBE", n:"Adobe"},{s:"CRM", n:"Salesforce"},{s:"SQ", n:"Block"},
+  {s:"PYPL", n:"PayPal"},{s:"INTU", n:"Intuit"},{s:"SNOW", n:"Snowflake"},{s:"ADSK", n:"Autodesk"},
+  {s:"NOW", n:"ServiceNow"},{s:"JPM", n:"JPMorgan"},{s:"BAC", n:"Bank of America"},{s:"WFC", n:"Wells Fargo"},
+  {s:"GS", n:"Goldman Sachs"},{s:"MS", n:"Morgan Stanley"},{s:"V", n:"Visa"},{s:"MA", n:"Mastercard"},
+  {s:"AXP", n:"American Express"},{s:"SCHW", n:"Charles Schwab"},{s:"BK", n:"Bank of New York Mellon"},
+  {s:"PG", n:"Procter & Gamble"},{s:"KO", n:"Coca-Cola"},{s:"PEP", n:"PepsiCo"},{s:"WMT", n:"Walmart"},
+  {s:"COST", n:"Costco"},{s:"MCD", n:"McDonald's"},{s:"NKE", n:"Nike"},{s:"SBUX", n:"Starbucks"},
+  {s:"HD", n:"Home Depot"},{s:"LOW", n:"Lowe's"},{s:"TJX", n:"TJX Companies"},{s:"DG", n:"Dollar General"},
+  {s:"DIS", n:"Disney"},{s:"LYV", n:"Live Nation"},{s:"MELI", n:"MercadoLibre"},{s:"BA", n:"Boeing"},
+  {s:"CAT", n:"Caterpillar"},{s:"GE", n:"General Electric"},{s:"MMM", n:"3M"},{s:"HON", n:"Honeywell"},
+  {s:"UPS", n:"UPS"},{s:"FDX", n:"FedEx"},{s:"LMT", n:"Lockheed Martin"},{s:"RTX", n:"Raytheon Technologies"},
+  {s:"DAL", n:"Delta Air Lines"},{s:"UAL", n:"United Airlines"},{s:"XOM", n:"Exxon Mobil"},{s:"CVX", n:"Chevron"},
+  {s:"COP", n:"ConocoPhillips"},{s:"BP", n:"BP"},{s:"TOT", n:"TotalEnergies"},{s:"SLB", n:"Schlumberger"},
+  {s:"JNJ", n:"Johnson & Johnson"},{s:"PFE", n:"Pfizer"},{s:"MRK", n:"Merck"},{s:"ABBV", n:"AbbVie"},
+  {s:"BMY", n:"Bristol Myers Squibb"},{s:"LLY", n:"Eli Lilly"},{s:"AMGN", n:"Amgen"},{s:"GILD", n:"Gilead Sciences"},
+  {s:"NESN.SW", n:"Nestlé"},{s:"ROG.SW", n:"Roche"},{s:"NOVN.SW", n:"Novartis"},{s:"UBSG.SW", n:"UBS"},
+  {s:"ZURN.SW", n:"Zurich Insurance"},{s:"CFR.SW", n:"Credit Suisse"},{s:"SAP.DE", n:"SAP"},{s:"ASML.AS", n:"ASML"},
+  {s:"AIR.PA", n:"Airbus"},{s:"DAI.DE", n:"Daimler"},{s:"BN.PA", n:"BNP Paribas"},{s:"SIE.DE", n:"Siemens"},
+  {s:"ENGI.PA", n:"Engie"},{s:"7203.T", n:"Toyota"},{s:"6758.T", n:"Sony"},{s:"9984.T", n:"SoftBank"},
+  {s:"6861.T", n:"Keyence"},{s:"BABA", n:"Alibaba"},{s:"TCEHY", n:"Tencent"},{s:"JD", n:"JD.com"},
+  {s:"INFY", n:"Infosys"},{s:"HDB", n:"HDFC Bank"},{s:"ICICIBANK.NS", n:"ICICI Bank"},{s:"RELIANCE.BO", n:"Reliance"},
+  {s:"T", n:"AT&T"},{s:"VZ", n:"Verizon"},{s:"TMUS", n:"T-Mobile US"},{s:"CMCSA", n:"Comcast"},{s:"FOX", n:"Fox Corp"},
+  // Rest kann erweitert werden...
 ];
 
-/* ================= INIT ================= */
+/* ================= INIT SELECT ================= */
 const stockSelect = document.getElementById("stockSelect");
 STOCKS.forEach(a=>{
   const o=document.createElement("option");
@@ -77,43 +61,57 @@ const EVENTS = [
   {date:"2025-08-10", impact:0.03, description:"Zinsentscheid der EZB positiv"}
 ];
 
-/* ================= API FETCH ================= */
+/* ================= API FETCH MIT ROTATION ================= */
 async function getHistory(symbol){
-  try{
-    const key = API_KEYS[apiIndex];
-    const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
-    const d = await r.json();
-    if(!d["Time Series (Daily)"]){
-      apiIndex = (apiIndex+1) % API_KEYS.length;
-      throw new Error("API-Limit erreicht oder keine Daten verfügbar");
+  let attempts = 0;
+  const maxAttempts = API_KEYS.length;
+
+  while(attempts < maxAttempts){
+    try{
+      const key = API_KEYS[apiIndex];
+      const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
+      const d = await r.json();
+
+      if(d.Note || d["Error Message"] || !d["Time Series (Daily)"]){
+        console.warn(`API-Key ${key} Limit erreicht, wechsle Key…`);
+        apiIndex = (apiIndex + 1) % API_KEYS.length;
+        attempts++;
+        continue;
+      }
+
+      const entries = Object.entries(d["Time Series (Daily)"] || []).slice(0, 90).reverse();
+      if(!entries.length) throw new Error("Keine historischen Daten gefunden");
+      return entries.map(([date,v])=>({date, price: parseFloat(v["4. close"]||0) * USD_TO_CHF}));
+
+    } catch(e){
+      console.error(e);
+      apiIndex = (apiIndex + 1) % API_KEYS.length;
+      attempts++;
     }
-    const entries = Object.entries(d["Time Series (Daily)"] || []).slice(0, 90).reverse();
-    if(!entries.length) throw new Error("Keine historischen Daten gefunden");
-    return entries.map(([date,v])=>({date, price: parseFloat(v["4. close"]||0)*USD_TO_CHF}));
-  } catch(e){
-    console.error(e);
-    document.getElementById("status").textContent = e.message || e;
-    return [];
   }
+  document.getElementById("status").textContent = "Alle API-Keys aufgebraucht oder Fehler beim Laden der Daten.";
+  return [];
 }
 
 /* ================= INDICATORS ================= */
 function EMA(data, period){
   if(!data.length) return 0;
-  const k=2/(period+1);
-  let e=data[0].price;
+  const k = 2/(period+1);
+  let e = data[0].price;
   for(let i=1;i<data.length;i++) e = data[i].price*k + e*(1-k);
   return e;
 }
+
 function RSI(data){
   if(data.length<15) return 50;
   let gains=0, losses=0;
   for(let i=data.length-15;i<data.length-1;i++){
-    const diff=data[i+1].price-data[i].price;
+    const diff = data[i+1].price - data[i].price;
     if(diff>0) gains+=diff; else losses-=diff;
   }
   return 100-(100/(1+(gains/(losses||1))));
 }
+
 function MACD(data){return EMA(data,12)-EMA(data,26);}
 
 /* ================= PREDICTION ================= */
@@ -132,6 +130,7 @@ function predict(data){
 
   return {pred, recentEvents};
 }
+
 function confidenceScore(data){
   let s=60;
   const macd = MACD(data);
@@ -158,6 +157,7 @@ function drawChart(data,pred,recentEvents){
       label:{content:e.description, enabled:true, position:'top', backgroundColor:'#111', color:'#00ffcc', font:{size:11}}
     }
   }).filter(a=>a);
+
   chart = new Chart(document.getElementById("chart"),{
     type:"line",
     data:{
