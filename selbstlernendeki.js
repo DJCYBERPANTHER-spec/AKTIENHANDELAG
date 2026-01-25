@@ -1,4 +1,4 @@
-/* ================= API & Konfiguration ================= */
+/* ================= API & KONFIG ================= */
 const API_KEYS = [
   "GH13X9P8J48O0UPW",
   "KAQ3H4TQELGSHL",
@@ -9,11 +9,10 @@ let apiIndex = 0;
 let USD_TO_CHF = 0.91;
 
 let KI_MODE = "normal";
-let forecastDays = 7;
-
-/* Speichert historische Fehler zur KI-Lernschleife */
+let forecastDays = 7; // Anzahl Tage für Prognose
 let historicalErrors = JSON.parse(localStorage.getItem("historicalErrors") || "{}");
 
+/* ================= MODE ================= */
 function setMode(m){
   KI_MODE = m;
   document.getElementById("mode").textContent = m.charAt(0).toUpperCase()+m.slice(1);
@@ -65,24 +64,30 @@ const EVENTS = [
   {date:"2025-08-10", impact:0.03, description:"Zinsentscheid der EZB positiv"}
 ];
 
-/* ================= API FETCH MIT ROTATION ================= */
+/* ================= API FETCH MIT CACHE & ROTATION ================= */
 async function getHistory(symbol){
-  let attempts=0, maxAttempts=API_KEYS.length;
-  while(attempts<maxAttempts){
+  const cacheKey = "history_"+symbol;
+  const cached = JSON.parse(localStorage.getItem(cacheKey) || "null");
+  if(cached && Date.now()-cached.timestamp < 24*60*60*1000) return cached.entries;
+
+  let attempts=0;
+  while(attempts<API_KEYS.length){
+    const key = API_KEYS[apiIndex];
     try{
-      const key=API_KEYS[apiIndex];
-      const r=await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
-      const d=await r.json();
-      if(d.Note || d["Error Message"] || !d["Time Series (Daily)"]){
+      const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
+      const d = await r.json();
+      if(!d["Time Series (Daily)"]){
         apiIndex=(apiIndex+1)%API_KEYS.length;
         attempts++;
         continue;
       }
-      const entries=Object.entries(d["Time Series (Daily)"]||[]).slice(0,90).reverse();
-      return entries.map(([date,v])=>({date, price: parseFloat(v["4. close"]||0)*USD_TO_CHF}));
+      const entries = Object.entries(d["Time Series (Daily)"]).slice(0,90).reverse()
+        .map(([date,v])=>({date, price:parseFloat(v["4. close"]||0)*USD_TO_CHF}));
+      localStorage.setItem(cacheKey, JSON.stringify({timestamp: Date.now(), entries}));
+      return entries;
     }catch(e){apiIndex=(apiIndex+1)%API_KEYS.length; attempts++;}
   }
-  document.getElementById("status").textContent="Alle API-Keys aufgebraucht oder Fehler beim Laden der Daten.";
+  document.getElementById("status").textContent="Alle API-Keys aufgebraucht oder Fehler beim Laden der Daten. Bitte später erneut versuchen.";
   return [];
 }
 
@@ -132,7 +137,7 @@ async function analyze(){
   document.getElementById("status").textContent="Lade Marktdaten…";
   const symbol=stockSelect.value;
   const data=await getHistory(symbol);
-  if(!data.length)return;
+  if(!data.length) return;
   const {pred,recentEvents}=predict(data);
   drawChart(data,pred,recentEvents);
 
