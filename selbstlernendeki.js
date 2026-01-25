@@ -1,5 +1,10 @@
 /* ================= API & Konfiguration ================= */
-const API_KEYS = ["GH13X9P8J48O0UPW","KAQ3H4TQELGSHL"];
+const API_KEYS = [
+  "GH13X9P8J48O0UPW",
+  "KAQ3H4TQELGSHL",
+  "V1270QJC4U234VM5",
+  "773MREFM9OMEXXCX"
+];
 let apiIndex = 0;
 let USD_TO_CHF = 0.91;
 
@@ -52,9 +57,6 @@ STOCKS.forEach(a=>{
   stockSelect.appendChild(o);
 });
 
-const periodSelect = document.getElementById("periodSelect");
-periodSelect.addEventListener("change",()=>{forecastDays = parseInt(periodSelect.value)});
-
 /* ================= EXTERNE EREIGNISSE ================= */
 const EVENTS = [
   {date:"2025-11-01", impact:-0.12, description:"Globale Rezessionssorgen"},
@@ -95,8 +97,6 @@ function MOM(data, period=5){if(data.length<period)return 0; return data[data.le
 function predict(data){
   if(!data.length)return {pred:0, recentEvents:[]};
   let last=data[data.length-1].price;
-
-  // Dynamische Gewichtung aus historischem Fehler
   const histError=historicalErrors[stockSelect.value]||1;
   let w=KI_MODE==="safe"?0.5*histError:KI_MODE==="aggressive"?1.3*histError:0.8*histError;
 
@@ -109,7 +109,6 @@ function predict(data){
   const recentEvents=EVENTS.filter(e=>data.some(d=>d.date===e.date));
   recentEvents.forEach(e=>pred*=1+e.impact);
 
-  // Historische Lernschleife: Fehler speichern
   const error=Math.abs(pred-last)/last;
   historicalErrors[stockSelect.value]=(historicalErrors[stockSelect.value]||1)*0.95+0.05*error;
   localStorage.setItem("historicalErrors",JSON.stringify(historicalErrors));
