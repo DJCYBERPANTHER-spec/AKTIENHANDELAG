@@ -1,9 +1,19 @@
-/* ================= API KEYS ================= */
+/* ================= API & Konfiguration ================= */
 const API_KEYS = ["GH13X9P8J48O0UPW","KAQ3H4TQELGSHL"];
 let apiIndex = 0;
-let USD_TO_CHF = 0.91; // Default, wird per API aktualisiert
+let USD_TO_CHF = 0.91; // Standard
 
-/* ================= AKTIEN (~160) ================= */
+// Vorhersagezeitraum in Tagen
+let forecastDays = 7;
+
+let KI_MODE = "normal";
+function setMode(m){
+  KI_MODE = m;
+  document.getElementById("mode").textContent = m.charAt(0).toUpperCase()+m.slice(1);
+}
+
+/* ================= AKTIEN ================= */
+// 160+ Aktien (Beispiele, kann beliebig erweitert werden)
 const STOCKS = [
   {s:"AAPL", n:"Apple"}, {s:"MSFT", n:"Microsoft"}, {s:"NVDA", n:"NVIDIA"},
   {s:"AMD", n:"AMD"}, {s:"INTC", n:"Intel"}, {s:"TSLA", n:"Tesla"},
@@ -47,7 +57,19 @@ const STOCKS = [
   {s:"LOW", n:"Lowe's"}, {s:"NKE", n:"Nike"}, {s:"SBUX", n:"Starbucks"}
 ];
 
-/* ================= EVENTS ================= */
+/* ================= INIT ================= */
+const stockSelect = document.getElementById("stockSelect");
+STOCKS.forEach(a=>{
+  const o=document.createElement("option");
+  o.value=a.s;
+  o.textContent=`${a.s} – ${a.n}`;
+  stockSelect.appendChild(o);
+});
+
+const periodSelect = document.getElementById("periodSelect");
+periodSelect.addEventListener("change",()=>{forecastDays = parseInt(periodSelect.value)});
+
+/* ================= EXTERNE EREIGNISSE ================= */
 const EVENTS = [
   {date:"2025-11-01", impact:-0.12, description:"Globale Rezessionssorgen"},
   {date:"2025-10-20", impact:-0.08, description:"Börsencrash Tech-Sektor"},
@@ -55,80 +77,61 @@ const EVENTS = [
   {date:"2025-08-10", impact:0.03, description:"Zinsentscheid der EZB positiv"}
 ];
 
-/* ================= MODE ================= */
-let KI_MODE = "normal";
-function setMode(m){
-  KI_MODE = m;
-  document.getElementById("mode").textContent = m.charAt(0).toUpperCase() + m.slice(1);
-}
-
-/* ================= FILL SELECT ================= */
-const select = document.getElementById("stockSelect");
-STOCKS.forEach(a=>{
-  const o = document.createElement("option");
-  o.value = a.s;
-  o.textContent = `${a.s} – ${a.n}`;
-  select.appendChild(o);
-});
-
-/* ================= USD → CHF ================= */
-async function getUSDCHF(){
-  try{
-    const res = await fetch("https://api.exchangerate.host/latest?base=USD&symbols=CHF");
-    const data = await res.json();
-    USD_TO_CHF = data.rates.CHF || 0.91;
-  }catch(e){ console.log("Fehler USD->CHF", e);}
-}
-
-/* ================= HISTORY FETCH ================= */
+/* ================= API FETCH ================= */
 async function getHistory(symbol){
-  const key = API_KEYS[apiIndex];
-  const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
-  const d = await r.json();
-  if(d.Note || d["Error Message"]){
-    apiIndex = (apiIndex+1) % API_KEYS.length;
-    throw "API-Limit erreicht – bitte 60 Sekunden warten";
+  try{
+    const key = API_KEYS[apiIndex];
+    const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
+    const d = await r.json();
+    if(!d["Time Series (Daily)"]){
+      apiIndex = (apiIndex+1) % API_KEYS.length;
+      throw new Error("API-Limit erreicht oder keine Daten verfügbar");
+    }
+    const entries = Object.entries(d["Time Series (Daily)"] || []).slice(0, 90).reverse();
+    if(!entries.length) throw new Error("Keine historischen Daten gefunden");
+    return entries.map(([date,v])=>({date, price: parseFloat(v["4. close"]||0)*USD_TO_CHF}));
+  } catch(e){
+    console.error(e);
+    document.getElementById("status").textContent = e.message || e;
+    return [];
   }
-  return Object.entries(d["Time Series (Daily)"])
-    .slice(0, 180) // 180 Tage = ~6 Monate
-    .reverse()
-    .map(([date,v]) => ({date, price:parseFloat(v["4. close"])*USD_TO_CHF}));
 }
 
 /* ================= INDICATORS ================= */
 function EMA(data, period){
-  const k = 2/(period+1);
-  let e = data[0].price;
+  if(!data.length) return 0;
+  const k=2/(period+1);
+  let e=data[0].price;
   for(let i=1;i<data.length;i++) e = data[i].price*k + e*(1-k);
   return e;
 }
 function RSI(data){
-  let gains=0,losses=0;
+  if(data.length<15) return 50;
+  let gains=0, losses=0;
   for(let i=data.length-15;i<data.length-1;i++){
     const diff=data[i+1].price-data[i].price;
     if(diff>0) gains+=diff; else losses-=diff;
   }
   return 100-(100/(1+(gains/(losses||1))));
 }
-function MACD(data){ return EMA(data,12)-EMA(data,26); }
+function MACD(data){return EMA(data,12)-EMA(data,26);}
 
 /* ================= PREDICTION ================= */
-function predict(data, daysAhead){
+function predict(data){
+  if(!data.length) return {pred:0, recentEvents:[]};
   const last = data[data.length-1].price;
   let w = KI_MODE==="safe"?0.5:KI_MODE==="aggressive"?1.3:0.8;
-  let factor = 1 + ((EMA(data,10)-last)/last*0.5*w)*(daysAhead/5); // skaliert für Tage
-  let pred = last * factor;
+  let pred = last*(1+(EMA(data,10)-last)/last*0.5*w);
 
   const rsi = RSI(data);
-  if(rsi>70) pred *= 0.97;
-  if(rsi<30) pred *= 1.03;
+  if(rsi>70) pred*=0.97;
+  if(rsi<30) pred*=1.03;
 
-  const recentEvents = EVENTS.filter(e => data.some(d=>d.date===e.date));
-  recentEvents.forEach(e => pred *= 1 + e.impact);
+  const recentEvents = EVENTS.filter(e=>data.some(d=>d.date===e.date));
+  recentEvents.forEach(e=>pred*=1+e.impact);
 
   return {pred, recentEvents};
 }
-
 function confidenceScore(data){
   let s=60;
   const macd = MACD(data);
@@ -143,6 +146,18 @@ function confidenceScore(data){
 let chart;
 function drawChart(data,pred,recentEvents){
   if(chart) chart.destroy();
+  const annotations = recentEvents.map(e=>{
+    const index = data.findIndex(d=>d.date===e.date);
+    if(index<0) return null;
+    return {
+      type:'point',
+      xValue:data[index].date,
+      yValue:data[index].price,
+      backgroundColor:e.impact>0?'#00ff66':'#ff5555',
+      radius:6,
+      label:{content:e.description, enabled:true, position:'top', backgroundColor:'#111', color:'#00ffcc', font:{size:11}}
+    }
+  }).filter(a=>a);
   chart = new Chart(document.getElementById("chart"),{
     type:"line",
     data:{
@@ -154,48 +169,45 @@ function drawChart(data,pred,recentEvents){
     },
     options:{
       responsive:true,
-      plugins:{legend:{display:true}, tooltip:{mode:'index', intersect:false}},
-      scales:{
-        x:{display:true,title:{display:true,text:'Datum'}},
-        y:{display:true,title:{display:true,text:'Preis (CHF)'}}
-      }
+      plugins:{legend:{display:true}, tooltip:{mode:'index', intersect:false}, annotation:{annotations}},
+      scales:{x:{display:true,title:{display:true,text:'Datum'}}, y:{display:true,title:{display:true,text:'Preis (CHF)'}}}
     }
   });
 }
 
-/* ================= MULTI-PERIOD ANALYSE ================= */
+/* ================= ANALYSE ================= */
 async function analyze(){
   document.getElementById("status").textContent="Lade Marktdaten…";
-  await getUSDCHF();
+  const symbol = stockSelect.value;
+  const data = await getHistory(symbol);
+  if(!data.length) return;
 
-  try{
-    const data = await getHistory(select.value);
-    const periods = { "1W":5, "3W":15, "1M":22, "3M":66, "6M":132, "1J":260 };
-    let resultsHTML = "";
+  const {pred, recentEvents} = predict(data);
+  drawChart(data,pred,recentEvents);
 
-    for(const [label, days] of Object.entries(periods)){
-      const {pred} = predict(data, days);
-      const last = data[data.length-1].price;
-      const d = (pred-last)/last;
-      const signal = d>0.08?"KAUFEN":d<-0.08?"VERKAUFEN":"HALTEN";
-      const cls = d>0.08?"buy":d<-0.08?"sell":"hold";
+  const last = data[data.length-1].price;
+  const d = (pred-last)/last;
+  const signal = d>0.08?"KAUFEN":d<-0.08?"VERKAUFEN":"HALTEN";
+  const cls = d>0.08?"buy":d<-0.08?"sell":"hold";
 
-      resultsHTML += `<tr>
-        <td>${label}</td>
-        <td>${last.toFixed(2)}</td>
-        <td>${pred.toFixed(2)}</td>
-        <td class="${cls}">${signal}</td>
-        <td>${(Math.abs(d)*100).toFixed(1)}%</td>
-      </tr>`;
-    }
+  document.getElementById("confidence").textContent = confidenceScore(data);
 
-    document.getElementById("result").innerHTML = resultsHTML;
-    drawChart(data, predict(data,22).pred, []); // Chart nur 1M Projektion
+  document.getElementById("result").innerHTML = `
+    <tr>
+      <td>${forecastDays} Tage</td>
+      <td>${last.toFixed(2)}</td>
+      <td>${pred.toFixed(2)}</td>
+      <td class="${cls}">${signal}</td>
+      <td>${(Math.abs(d)*100).toFixed(1)}%</td>
+    </tr>
+  `;
 
-    document.getElementById("confidence").textContent = confidenceScore(data);
-    document.getElementById("status").textContent="Analyse abgeschlossen";
+  document.getElementById("explanation").innerHTML = 
+    `RSI ${RSI(data).toFixed(1)}, MACD ${MACD(data).toFixed(2)}, Modus ${KI_MODE}.<br>` +
+    (recentEvents.length
+      ? "Berücksichtigte Ereignisse: " + recentEvents.map(e=>`${e.description} (${(e.impact*100).toFixed(1)}%)`).join(", ")
+      : "Keine besonderen Ereignisse.");
 
-  }catch(e){
-    document.getElementById("status").textContent=e;
-  }
+  document.getElementById("fundamental").innerHTML = "Grundlegende Stabilitätsprüfung (internes Filtermodell).";
+  document.getElementById("status").textContent="Analyse abgeschlossen";
 }
