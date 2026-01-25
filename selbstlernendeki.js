@@ -51,22 +51,38 @@ document.addEventListener("DOMContentLoaded", () => {
     const key = API_KEYS[apiIndex];
     const r = await fetch(`https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${key}`);
     const d = await r.json();
-    if(d.Note || d["Error Message"]){ 
-      apiIndex=(apiIndex+1)%API_KEYS.length; 
-      throw "API-Limit erreicht"; 
+
+    if(!d["Time Series (Daily)"]){
+        apiIndex = (apiIndex + 1) % API_KEYS.length;
+        throw "Keine historischen Daten verfügbar oder API-Limit erreicht";
     }
+
     return Object.entries(d["Time Series (Daily)"])
-      .slice(0,120)
-      .reverse()
-      .map(([date,v])=>({date, price: parseFloat(v["4. close"]) * USD_TO_CHF}));
+        .slice(0,120)
+        .reverse()
+        .map(([date,v])=>({date, price: parseFloat(v["4. close"]) * USD_TO_CHF}))
+        .filter(e => !isNaN(e.price));
   }
 
   /* ================= INDICATORS ================= */
   function EMA(data, period){ const k=2/(period+1); let e=data[0].price; for(let i=1;i<data.length;i++) e=data[i].price*k+e*(1-k); return e; }
-  function RSI(data){ let gains=0,losses=0; for(let i=data.length-15;i<data.length-1;i++){ const diff=data[i+1].price-data[i].price; if(diff>0) gains+=diff; else losses-=diff; } return 100-(100/(1+(gains/(losses||1)))); }
-  function MACD(data){ return EMA(data,12)-EMA(data,26); }
-  function volatility(data){ const mean = data.reduce((sum,d)=>sum+d.price,0)/data.length; const std = Math.sqrt(data.reduce((sum,d)=>sum+Math.pow(d.price-mean,2),0)/data.length); return std; }
-  function momentum(data){ return data[data.length-1].price - data[0].price; }
+  function RSI(data){ 
+    if(data.length<15) return 50;
+    let gains=0,losses=0; 
+    for(let i=data.length-15;i<data.length-1;i++){
+      const diff=data[i+1].price-data[i].price; 
+      if(diff>0) gains+=diff; else losses-=diff; 
+    } 
+    return 100-(100/(1+(gains/(losses||1)))); 
+  }
+  function MACD(data){ if(data.length<26) return 0; return EMA(data,12)-EMA(data,26); }
+  function volatility(data){ 
+    if(data.length===0) return 0;
+    const mean = data.reduce((sum,d)=>sum+d.price,0)/data.length; 
+    const std = Math.sqrt(data.reduce((sum,d)=>sum+Math.pow(d.price-mean,2),0)/data.length); 
+    return std; 
+  }
+  function momentum(data){ return data.length>1 ? data[data.length-1].price - data[0].price : 0; }
 
   /* ================= TENSORFLOW ================= */
   let model;
@@ -79,13 +95,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createFeatures(data){
+    if(!data || data.length<15) return [];
     const features = [];
     for(let i=1;i<data.length;i++){
-      const diff=data[i].price-data[i-1].price;
-      const rsi=RSI(data.slice(i-14>0?i-14:0,i+1));
-      const macd=MACD(data.slice(0,i+1));
-      const vol=volatility(data.slice(i-14>0?i-14:0,i+1));
-      const mom=momentum(data.slice(i-7>0?i-7:0,i+1));
+      if(!data[i] || data[i].price===undefined) continue;
+      const diff = data[i].price - data[i-1].price;
+      const rsi = RSI(data.slice(Math.max(0,i-14),i+1));
+      const macd = MACD(data.slice(0,i+1));
+      const vol = volatility(data.slice(Math.max(0,i-14),i+1));
+      const mom = momentum(data.slice(Math.max(0,i-7),i+1));
       features.push([data[i-1].price,diff,rsi,macd,vol,mom]);
     }
     return features;
@@ -93,20 +111,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function predictML(data){
     const features=createFeatures(data);
+    if(features.length===0) return {preds:[], upper:[], lower:[]};
+
     const xs=tf.tensor2d(features);
     const ys=tf.tensor2d(data.slice(1).map(d=>[d.price]));
     if(!model) await initModel(features[0].length);
     await model.fit(xs, ys, {epochs:50, verbose:0});
-    
+
     const lastFeature=features[features.length-1];
     let preds=[], upper=[], lower=[];
     let price=data[data.length-1].price;
     for(let i=0;i<7;i++){
-      let pred=model.predict(tf.tensor2d([lastFeature])).dataSync()[0];
+      let pred = model.predict(tf.tensor2d([lastFeature])).dataSync()[0];
       pred = price + (pred-price)*modeWeights[KI_MODE];
       preds.push(pred);
-      upper.push(pred * 1.03);
-      lower.push(pred * 0.97);
+      upper.push(pred*1.03);
+      lower.push(pred*0.97);
       price=pred;
     }
     return {preds, upper, lower};
@@ -115,7 +135,8 @@ document.addEventListener("DOMContentLoaded", () => {
   function confidenceScore(data){
     let s=60;
     const macd=MACD(data),rsi=RSI(data);
-    if(Math.abs(macd)>0.5) s+=5; if(rsi>40&&rsi<60) s+=5;
+    if(Math.abs(macd)>0.5) s+=5; 
+    if(rsi>40&&rsi<60) s+=5;
     if(KI_MODE==="safe") s+=3;
     return s>75?"Hoch":s>65?"Mittel":"Niedrig";
   }
@@ -124,6 +145,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let chart;
   function drawChart(data,preds,upper,lower){
     if(chart) chart.destroy();
+    if(!data || data.length===0) return;
+
     const projData=[...data.map(d=>d.price), ...preds];
     const projLabels=[...data.map(d=>d.date), ...preds.map((_,i)=>`Day ${i+1}`)];
 
@@ -150,20 +173,24 @@ document.addEventListener("DOMContentLoaded", () => {
   window.analyze = async function(){
     document.getElementById("status").textContent="Lade Marktdaten…";
     try{
-      const data=await getHistory(select.value);
-      const {preds,upper,lower}=await predictML(data);
-      drawChart(data,preds,upper,lower);
+        const data = await getHistory(select.value);
+        if(!data || data.length===0) throw "Keine Daten verfügbar";
 
-      const last=data[data.length-1].price;
-      const pred=preds[0];
-      const d=(pred-last)/last;
-      const signal=d>0.08?"KAUFEN":d<-0.08?"VERKAUFEN":"HALTEN";
-      const cls=d>0.08?"buy":d<-0.08?"sell":"hold";
+        const {preds, upper, lower} = await predictML(data);
+        drawChart(data, preds, upper, lower);
 
-      document.getElementById("confidence").textContent=confidenceScore(data);
-      document.getElementById("result").innerHTML=`<tr><td>${last.toFixed(2)}</td><td>${pred.toFixed(2)}</td><td class="${cls}">${signal}</td><td>${(Math.abs(d)*100).toFixed(1)}%</td></tr>`;
-      document.getElementById("status").textContent="Analyse abgeschlossen";
-    }catch(e){document.getElementById("status").textContent=e;}
+        const last=data[data.length-1].price;
+        const pred=preds.length>0 ? preds[0] : last;
+        const d=(pred-last)/last;
+        const signal=d>0.08?"KAUFEN":d<-0.08?"VERKAUFEN":"HALTEN";
+        const cls=d>0.08?"buy":d<-0.08?"sell":"hold";
+
+        document.getElementById("confidence").textContent=confidenceScore(data);
+        document.getElementById("result").innerHTML=`<tr><td>${last.toFixed(2)}</td><td>${pred.toFixed(2)}</td><td class="${cls}">${signal}</td><td>${(Math.abs(d)*100).toFixed(1)}%</td></tr>`;
+        document.getElementById("status").textContent="Analyse abgeschlossen";
+    }catch(e){
+        document.getElementById("status").textContent=e;
+    }
   }
 
 });
