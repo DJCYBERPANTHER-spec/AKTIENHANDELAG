@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AKTIEN HANDEL AG</title>
+<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
 </head>
 <body>
 
-<h1>KI AKTIEN HANDEL AG</h1>
+<h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
 
 <div class="controls">
   <select id="stockSelect"></select>
@@ -23,24 +23,21 @@
   <button onclick="setMode('aggressive')">🔴 Aggressiv</button>
 </div>
 
-<div class="controls">
-  <label>Prognosezeitraum:</label>
-  <select onchange="setForecastPeriod(parseInt(this.value))">
-    <option value="7">1 Woche</option>
-    <option value="21">3 Wochen</option>
-    <option value="30">1 Monat</option>
-    <option value="90">3 Monate</option>
-    <option value="180">6 Monate</option>
-    <option value="365">1 Jahr</option>
-  </select>
-</div>
-
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
 </div>
 
 <div class="status" id="status">Bereit</div>
+
+<div class="forecast-periods">
+  <button class="forecast-btn" data-days="7">1 Woche</button>
+  <button class="forecast-btn" data-days="21">3 Wochen</button>
+  <button class="forecast-btn" data-days="30">1 Monat</button>
+  <button class="forecast-btn" data-days="90">3 Monate</button>
+  <button class="forecast-btn" data-days="180">6 Monate</button>
+  <button class="forecast-btn" data-days="365">1 Jahr</button>
+</div>
 
 <div class="legend-box">
   <div><span class="legend-color" style="background:#00ff66"></span> Positives Ereignis</div>
