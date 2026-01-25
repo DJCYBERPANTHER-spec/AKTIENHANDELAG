@@ -5,9 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YANNIC KÖBI AKTIEN HANDEL AG</title>
 
-<link rel="stylesheet" href="style.css">
+<!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
+
+<!-- CSS -->
+<link rel="stylesheet" href="selflernendeki_style.css">
+
 </head>
 <body>
 
@@ -27,7 +31,8 @@
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
-  <div>Tagesprognosen: <b id="dailyCount">0/100</b></div>
+  <div>KI-Genauigkeit: <b id="accuracy">–</b></div>
+  <div>Prognosen heute: <b id="dailyCount">0</b>/100</div>
 </div>
 
 <div class="status" id="status">Bereit</div>
@@ -65,11 +70,12 @@
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
-<script type="module" src="main_part1.js"></script>
-<script type="module" src="main_part2.js"></script>
-<script type="module" src="main_part3.js"></script>
-<script type="module" src="main_part4.js"></script>
-<script type="module" src="main_part5.js"></script>
+<!-- JS-Teile einbinden -->
+<script type="module" src="selflernendeki_part1.js"></script>
+<script type="module" src="selflernendeki_part2.js"></script>
+<script type="module" src="selflernendeki_part3.js"></script>
+<script type="module" src="selflernendeki_part4.js"></script>
+<script type="module" src="selflernendeki_part5.js"></script>
 
 </body>
 </html>
