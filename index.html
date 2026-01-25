@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AKTIEN HANDEL AG</title>
+<title>KI AKTIEN HANDEL AG</title>
+<link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
-<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>AKTIEN HANDEL AG</h1>
+<h1>KI AKTIEN HANDEL AG</h1>
 
 <div class="controls">
   <select id="stockSelect"></select>
@@ -23,14 +23,9 @@
   <button onclick="setMode('aggressive')">🔴 Aggressiv</button>
 </div>
 
-<div class="info">
-  <div>Modus: <b id="mode">Normal</b></div>
-  <div>Konfidenz: <b id="confidence">–</b></div>
-</div>
-
 <div class="controls">
-  <label for="periodSelect">Vorhersage-Zeitraum:</label>
-  <select id="periodSelect">
+  <label for="forecast">Prognose Zeitraum:</label>
+  <select id="forecast" onchange="setForecast(this.value)">
     <option value="7">1 Woche</option>
     <option value="21">3 Wochen</option>
     <option value="30">1 Monat</option>
@@ -38,6 +33,11 @@
     <option value="180">6 Monate</option>
     <option value="365">1 Jahr</option>
   </select>
+</div>
+
+<div class="info">
+  <div>Modus: <b id="mode">Normal</b></div>
+  <div>Konfidenz: <b id="confidence">–</b></div>
 </div>
 
 <div class="status" id="status">Bereit</div>
@@ -54,7 +54,7 @@
 <tr>
   <th>Zeitraum</th>
   <th>Aktuell (CHF)</th>
-  <th>Projektion (CHF)</th>
+  <th>Projektion</th>
   <th>Signal</th>
   <th>Abweichung</th>
 </tr>
@@ -77,5 +77,10 @@ Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
 <script src="selbstlernendeki.js"></script>
+<script>
+function setForecast(value){
+  forecastDays = parseInt(value);
+}
+</script>
 </body>
 </html>
