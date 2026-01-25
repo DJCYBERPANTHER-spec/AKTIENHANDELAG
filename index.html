@@ -3,137 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AKTIEN HANDEL AG</title>
+<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
+
+<link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
-
-<style>
-body {
-  background:#0b0b0b;
-  color:#00ffcc;
-  font-family:'Orbitron',Arial,sans-serif;
-  margin:0; padding:16px;
-}
-h1,h2,h3 {text-align:center; margin:10px 0;}
-.controls {
-  display:flex;
-  gap:10px;
-  justify-content:center;
-  flex-wrap:wrap;
-  margin-bottom:15px;
-}
-select, button {
-  background:#111;
-  color:#00ffcc;
-  border:1px solid #00ffcc;
-  padding:6px 12px;
-  border-radius:6px;
-  transition:0.2s;
-}
-button:hover {background:#00ffcc; color:#111;}
-.info {
-  display:flex;
-  justify-content:center;
-  gap:20px;
-  margin:10px 0;
-  font-size:0.95rem;
-  flex-wrap:wrap;
-}
-.status {
-  text-align:center;
-  margin:6px;
-  font-weight:bold;
-}
-.buy {color:#00ff66;font-weight:bold;}
-.sell {color:#ff5555;font-weight:bold;}
-.hold {color:#ffaa00;font-weight:bold;}
-canvas {
-  max-width:1200px;
-  margin:20px auto;
-  display:block;
-  background:#111;
-  border-radius:8px;
-  padding:10px;
-}
-table {
-  width:100%;
-  max-width:1200px;
-  margin:auto;
-  border-collapse:collapse;
-  overflow-x:auto;
-}
-th,td {
-  border:1px solid #00ffcc;
-  padding:6px;
-  text-align:center;
-}
-th {background:#111;}
-.box {
-  max-width:1200px;
-  margin:10px auto;
-  border:1px solid #00ffcc;
-  padding:10px;
-  border-radius:6px;
-  background:#111;
-}
-.footer {
-  text-align:center;
-  font-size:.85rem;
-  margin-top:10px;
-  color:#9fffe8;
-}
-.legend-box {
-  display:flex;
-  justify-content:center;
-  gap:15px;
-  margin-bottom:10px;
-  font-size:0.9rem;
-}
-.legend-box div {
-  display:flex; align-items:center; gap:4px;
-}
-.legend-color {
-  width:12px; height:12px; border-radius:50%; display:inline-block;
-}
-/* Responsive für Handy */
-@media (max-width:768px){
-  .controls {flex-direction:column; align-items:center;}
-  table, canvas {width:100%;}
-}
-</style>
 </head>
 <body>
 
-<h1>AKTIEN HANDEL AG</h1>
+<h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
 
 <div class="controls">
   <select id="stockSelect"></select>
-  <button onclick="startAnalysis()">Analyse starten</button>
+  <select id="forecastSelect">
+    <option value="7">1 Woche</option>
+    <option value="21">3 Wochen</option>
+    <option value="30">1 Monat</option>
+    <option value="90">3 Monate</option>
+    <option value="180">6 Monate</option>
+    <option value="365">1 Jahr</option>
+  </select>
+  <button id="analyzeBtn">Analyse starten</button>
 </div>
 
 <div class="controls">
-  <button onclick="setMode('safe')">🟢 Vorsichtig</button>
-  <button onclick="setMode('normal')">🟡 Normal</button>
-  <button onclick="setMode('aggressive')">🔴 Aggressiv</button>
-</div>
-
-<div class="controls">
-  <label>Zukunftsperiode:
-    <select id="futureSelect">
-      <option value="7">1 Woche</option>
-      <option value="21">3 Wochen</option>
-      <option value="30">1 Monat</option>
-      <option value="90">3 Monate</option>
-      <option value="180">6 Monate</option>
-      <option value="365">1 Jahr</option>
-    </select>
-  </label>
+  <button data-mode="safe">🟢 Vorsichtig</button>
+  <button data-mode="normal">🟡 Normal</button>
+  <button data-mode="aggressive">🔴 Aggressiv</button>
 </div>
 
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
-  <div>Tagesprognosen: <b id="dayCount">0</b> / 100</div>
 </div>
 
 <div class="status" id="status">Bereit</div>
@@ -148,8 +49,10 @@ th {background:#111;}
 <table>
 <thead>
 <tr>
-  <th>Tag / Datum</th>
-  <th>Preis (CHF)</th>
+  <th>Aktuell (CHF)</th>
+  <th>Projektion</th>
+  <th>Signal</th>
+  <th>Abweichung</th>
 </tr>
 </thead>
 <tbody id="result"></tbody>
@@ -165,70 +68,37 @@ th {background:#111;}
 <div id="fundamental">–</div>
 </div>
 
+<div class="box">
+<h3>📈 Aktuelle Nachrichten & Events</h3>
+<div id="news">–</div>
+</div>
+
 <div class="footer">
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
-<script src="selbstlernendeki.js"></script>
-<script>
-const select = document.getElementById("stockSelect");
-STOCKS.forEach(a=>{
-  const o=document.createElement("option");
-  o.value=a.s;
-  o.textContent=`${a.s} – ${a.n}`;
-  select.appendChild(o);
+<script type="module">
+import { initializeStocks } from './stocks.js';
+import { setMode } from './mode.js';
+import { analyze } from './prognoseKI.js';
+
+const stockSelect = document.getElementById('stockSelect');
+const forecastSelect = document.getElementById('forecastSelect');
+const analyzeBtn = document.getElementById('analyzeBtn');
+const modeButtons = document.querySelectorAll('[data-mode]');
+
+initializeStocks(stockSelect);
+
+modeButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    setMode(btn.dataset.mode);
+  });
 });
 
-async function startAnalysis(){
-  document.getElementById("status").textContent="Lade Marktdaten…";
-  try{
-    checkPrognosenLimit();
-    document.getElementById("dayCount").textContent = prognosen.count;
-
-    const symbol = select.value;
-    const futureDays = parseInt(document.getElementById("futureSelect").value);
-    const data = await getHistory(symbol);
-
-    const {pred, futurePredictions} = predict(data, futureDays);
-
-    drawChart(data, futurePredictions[futurePredictions.length-1].price, []);
-
-    document.getElementById("result").innerHTML = futurePredictions.map(p=>`
-      <tr><td>${p.day}</td><td>${p.price.toFixed(2)}</td></tr>
-    `).join("");
-
-    document.getElementById("confidence").textContent = confidenceScore(data);
-
-    document.getElementById("explanation").innerHTML = `RSI ${RSI(data).toFixed(1)}, MACD ${MACD(data).toFixed(2)}, Modus ${KI_MODE}.`;
-
-    document.getElementById("fundamental").innerHTML = "Grundlegende Stabilitätsprüfung (internes Filtermodell).";
-
-    document.getElementById("status").textContent="Analyse abgeschlossen";
-  }catch(e){
-    document.getElementById("status").textContent=e;
-  }
-}
-
-/* ================= CHART ================= */
-let chart;
-function drawChart(data,pred,events){
-  if(chart) chart.destroy();
-  chart = new Chart(document.getElementById("chart"),{
-    type:"line",
-    data:{
-      labels:[...data.map(d=>d.date),...Array(events.length).fill("")],
-      datasets:[
-        {label:"Historischer Preis (CHF)", data:data.map(d=>d.price), borderColor:"#00ffcc", tension:0.3},
-        {label:"Prognose", data:[...Array(data.length-1).fill(null),pred], borderColor:"#ffaa00", tension:0.3}
-      ]
-    },
-    options:{
-      responsive:true,
-      plugins:{legend:{display:true}, tooltip:{mode:'index', intersect:false}},
-      scales:{x:{display:true,title:{display:true,text:'Datum'}}, y:{display:true,title:{display:true,text:'Preis (CHF)'}}}
-    }
-  });
-}
+analyzeBtn.addEventListener('click', () => {
+  analyze(stockSelect, { value: document.getElementById('mode').textContent.toLowerCase() }, forecastSelect);
+});
 </script>
+
 </body>
 </html>
