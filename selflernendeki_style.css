@@ -86,3 +86,11 @@ th {background:#111;}
 .legend-color {
   width:12px; height:12px; border-radius:50%; display:inline-block;
 }
+
+/* MOBILE RESPONSIVE */
+@media(max-width:600px){
+  body{padding:8px;}
+  canvas{padding:5px;}
+  .controls {flex-direction:column; align-items:center;}
+  .info {flex-direction:column; gap:8px;}
+}
