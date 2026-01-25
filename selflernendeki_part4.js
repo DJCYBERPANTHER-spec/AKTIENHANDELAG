@@ -1,5 +1,7 @@
-/* ================= PREDICTION ================= */
-function predict(data){
+import { EMA, RSI, MACD } from './selflernendeki_part3.js';
+import { KI_MODE, EVENTS } from './selflernendeki_part5.js';
+
+export function predict(data){
     const last = data[data.length-1].price;
     let w = KI_MODE==="safe"?0.5:KI_MODE==="aggressive"?1.3:0.8;
     let pred = last*(1+(EMA(data,10)-last)/last*0.5*w);
@@ -14,7 +16,7 @@ function predict(data){
     return {pred, recentEvents};
 }
 
-function confidenceScore(data){
+export function confidenceScore(data, KI_MODE){
     let s=60;
     const macd = MACD(data);
     const rsi = RSI(data);
