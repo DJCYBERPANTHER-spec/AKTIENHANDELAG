@@ -4,9 +4,108 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>YANNIC KÖBI AKTIEN HANDEL AG</title>
-<link rel="stylesheet" href="styles.css">
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+body {
+  background:#0b0b0b;
+  color:#00ffcc;
+  font-family:'Orbitron',Arial,sans-serif;
+  margin:0; padding:16px;
+}
+h1,h2,h3 {text-align:center; margin:10px 0;}
+.controls {
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-bottom:15px;
+}
+select, button {
+  background:#111;
+  color:#00ffcc;
+  border:1px solid #00ffcc;
+  padding:6px 12px;
+  border-radius:6px;
+  transition:0.2s;
+}
+button:hover {background:#00ffcc; color:#111;}
+.info {
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  margin:10px 0;
+  font-size:0.95rem;
+  flex-wrap:wrap;
+}
+.status {
+  text-align:center;
+  margin:6px;
+  font-weight:bold;
+}
+.buy {color:#00ff66;font-weight:bold;}
+.sell {color:#ff5555;font-weight:bold;}
+.hold {color:#ffaa00;font-weight:bold;}
+canvas {
+  max-width:1200px;
+  margin:20px auto;
+  display:block;
+  background:#111;
+  border-radius:8px;
+  padding:10px;
+}
+table {
+  width:100%;
+  max-width:1200px;
+  margin:auto;
+  border-collapse:collapse;
+  overflow-x:auto;
+}
+th,td {
+  border:1px solid #00ffcc;
+  padding:6px;
+  text-align:center;
+}
+th {background:#111;}
+.box {
+  max-width:1200px;
+  margin:10px auto;
+  border:1px solid #00ffcc;
+  padding:10px;
+  border-radius:6px;
+  background:#111;
+}
+.footer {
+  text-align:center;
+  font-size:.85rem;
+  margin-top:10px;
+  color:#9fffe8;
+}
+.legend-box {
+  display:flex;
+  justify-content:center;
+  gap:15px;
+  margin-bottom:10px;
+  font-size:0.9rem;
+  flex-wrap:wrap;
+}
+.legend-box div {
+  display:flex; align-items:center; gap:4px;
+}
+.legend-color {
+  width:12px; height:12px; border-radius:50%; display:inline-block;
+}
+@media screen and (max-width:768px) {
+  canvas {width:95%; height:auto;}
+  table, th, td {font-size:0.8rem;}
+  .controls {flex-direction:column; gap:8px;}
+  .info {flex-direction:column; gap:5px;}
+}
+</style>
 </head>
 <body>
 
@@ -44,18 +143,19 @@
   <th>Projektion</th>
   <th>Signal</th>
   <th>Abweichung</th>
+  <th>Zeitraum</th>
 </tr>
 </thead>
 <tbody id="result"></tbody>
 </table>
 
 <div class="box">
-<h3>🧠 Lernfortschritt & KI-Status</h3>
+<h3>🧠 Modell-Erklärung</h3>
 <div id="explanation">–</div>
 </div>
 
 <div class="box">
-<h3>🏦 Fundamentale Einordnung & News</h3>
+<h3>🏦 Fundamentale Einordnung & Aktuelle News</h3>
 <div id="fundamental">–</div>
 </div>
 
@@ -64,5 +164,6 @@ Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
 <script src="selbstlernendeki.js"></script>
+
 </body>
 </html>
