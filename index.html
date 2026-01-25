@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
-
+<title>AKTIEN HANDEL AG</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="selbstlernendeki.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
 
 <style>
 body {
@@ -96,31 +95,20 @@ th {background:#111;}
 .legend-color {
   width:12px; height:12px; border-radius:50%; display:inline-block;
 }
-.timeframe-controls {
-  display:flex;
-  justify-content:center;
-  gap:6px;
-  margin-bottom:10px;
-  flex-wrap:wrap;
+/* Responsive für Handy */
+@media (max-width:768px){
+  .controls {flex-direction:column; align-items:center;}
+  table, canvas {width:100%;}
 }
-.timeframe-controls button {
-  background:#111;
-  border:1px solid #00ffcc;
-  color:#00ffcc;
-  padding:4px 8px;
-  border-radius:5px;
-  font-size:0.9rem;
-}
-.timeframe-controls button:hover {background:#00ffcc; color:#111;}
 </style>
 </head>
 <body>
 
-<h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
+<h1>AKTIEN HANDEL AG</h1>
 
 <div class="controls">
   <select id="stockSelect"></select>
-  <button onclick="analyze()">Analyse starten</button>
+  <button onclick="startAnalysis()">Analyse starten</button>
 </div>
 
 <div class="controls">
@@ -129,18 +117,23 @@ th {background:#111;}
   <button onclick="setMode('aggressive')">🔴 Aggressiv</button>
 </div>
 
-<div class="timeframe-controls">
-  <button onclick="setTimeframe('1W')">1 Woche</button>
-  <button onclick="setTimeframe('3W')">3 Wochen</button>
-  <button onclick="setTimeframe('1M')">1 Monat</button>
-  <button onclick="setTimeframe('3M')">3 Monate</button>
-  <button onclick="setTimeframe('6M')">6 Monate</button>
-  <button onclick="setTimeframe('1J')">1 Jahr</button>
+<div class="controls">
+  <label>Zukunftsperiode:
+    <select id="futureSelect">
+      <option value="7">1 Woche</option>
+      <option value="21">3 Wochen</option>
+      <option value="30">1 Monat</option>
+      <option value="90">3 Monate</option>
+      <option value="180">6 Monate</option>
+      <option value="365">1 Jahr</option>
+    </select>
+  </label>
 </div>
 
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
+  <div>Tagesprognosen: <b id="dayCount">0</b> / 100</div>
 </div>
 
 <div class="status" id="status">Bereit</div>
@@ -155,10 +148,8 @@ th {background:#111;}
 <table>
 <thead>
 <tr>
-  <th>Aktuell (CHF)</th>
-  <th>Projektion</th>
-  <th>Signal</th>
-  <th>Abweichung</th>
+  <th>Tag / Datum</th>
+  <th>Preis (CHF)</th>
 </tr>
 </thead>
 <tbody id="result"></tbody>
@@ -178,5 +169,66 @@ th {background:#111;}
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
+<script src="selbstlernendeki.js"></script>
+<script>
+const select = document.getElementById("stockSelect");
+STOCKS.forEach(a=>{
+  const o=document.createElement("option");
+  o.value=a.s;
+  o.textContent=`${a.s} – ${a.n}`;
+  select.appendChild(o);
+});
+
+async function startAnalysis(){
+  document.getElementById("status").textContent="Lade Marktdaten…";
+  try{
+    checkPrognosenLimit();
+    document.getElementById("dayCount").textContent = prognosen.count;
+
+    const symbol = select.value;
+    const futureDays = parseInt(document.getElementById("futureSelect").value);
+    const data = await getHistory(symbol);
+
+    const {pred, futurePredictions} = predict(data, futureDays);
+
+    drawChart(data, futurePredictions[futurePredictions.length-1].price, []);
+
+    document.getElementById("result").innerHTML = futurePredictions.map(p=>`
+      <tr><td>${p.day}</td><td>${p.price.toFixed(2)}</td></tr>
+    `).join("");
+
+    document.getElementById("confidence").textContent = confidenceScore(data);
+
+    document.getElementById("explanation").innerHTML = `RSI ${RSI(data).toFixed(1)}, MACD ${MACD(data).toFixed(2)}, Modus ${KI_MODE}.`;
+
+    document.getElementById("fundamental").innerHTML = "Grundlegende Stabilitätsprüfung (internes Filtermodell).";
+
+    document.getElementById("status").textContent="Analyse abgeschlossen";
+  }catch(e){
+    document.getElementById("status").textContent=e;
+  }
+}
+
+/* ================= CHART ================= */
+let chart;
+function drawChart(data,pred,events){
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById("chart"),{
+    type:"line",
+    data:{
+      labels:[...data.map(d=>d.date),...Array(events.length).fill("")],
+      datasets:[
+        {label:"Historischer Preis (CHF)", data:data.map(d=>d.price), borderColor:"#00ffcc", tension:0.3},
+        {label:"Prognose", data:[...Array(data.length-1).fill(null),pred], borderColor:"#ffaa00", tension:0.3}
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{legend:{display:true}, tooltip:{mode:'index', intersect:false}},
+      scales:{x:{display:true,title:{display:true,text:'Datum'}}, y:{display:true,title:{display:true,text:'Preis (CHF)'}}}
+    }
+  });
+}
+</script>
 </body>
 </html>
