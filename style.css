@@ -78,7 +78,6 @@ th {background:#111;}
   gap:15px;
   margin-bottom:10px;
   font-size:0.9rem;
-  flex-wrap:wrap;
 }
 .legend-box div {
   display:flex; align-items:center; gap:4px;
@@ -86,14 +85,15 @@ th {background:#111;}
 .legend-color {
   width:12px; height:12px; border-radius:50%; display:inline-block;
 }
-
-/* Responsiv für Handy */
-@media (max-width: 768px) {
-  canvas, table, .box {
-    width: 100%;
-  }
-  .controls {
-    flex-direction: column;
-    align-items: center;
-  }
+.forecast-periods {
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:5px;
+  margin-bottom:15px;
+}
+.forecast-btn {cursor:pointer;}
+@media screen and (max-width: 768px){
+  canvas {width:100%;}
+  table {font-size:0.85rem;}
 }
