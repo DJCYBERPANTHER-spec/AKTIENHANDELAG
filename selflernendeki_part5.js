@@ -1,5 +1,9 @@
+import { getHistory } from './selflernendeki_part1.js';
+import { predict, confidenceScore } from './selflernendeki_part4.js';
+import { updateKIAccuracyFromData, KI_MODE } from './selflernendeki_part2.js';
+
 /* ================= EXTERNE EREIGNISSE ================= */
-const EVENTS = [
+export const EVENTS = [
     {date:"2025-11-01", impact:-0.12, description:"Globale Rezessionssorgen"},
     {date:"2025-10-20", impact:-0.08, description:"Börsencrash Tech-Sektor"},
     {date:"2025-09-15", impact:0.05, description:"Unerwartet gute Quartalszahlen"},
@@ -8,7 +12,7 @@ const EVENTS = [
 
 /* ================= CHART ================= */
 let chart;
-function drawChart(data,pred,recentEvents){
+export function drawChart(data,pred,recentEvents){
     if(chart) chart.destroy();
 
     const annotations = recentEvents.map((e)=>{
@@ -56,9 +60,10 @@ function drawChart(data,pred,recentEvents){
 }
 
 /* ================= ANALYSE ================= */
-async function analyze(){
+export async function analyze(){
     document.getElementById("status").textContent="Lade Marktdaten…";
     try{
+        const select = document.getElementById("stockSelect");
         const data = await getHistory(select.value);
         const {pred,recentEvents} = predict(data);
         drawChart(data,pred,recentEvents);
@@ -68,7 +73,7 @@ async function analyze(){
         const signal = d>0.08?"KAUFEN":d<-0.08?"VERKAUFEN":"HALTEN";
         const cls = d>0.08?"buy":d<-0.08?"sell":"hold";
 
-        document.getElementById("confidence").textContent = confidenceScore(data);
+        document.getElementById("confidence").textContent = confidenceScore(data, KI_MODE);
         document.getElementById("result").innerHTML = `
           <tr>
             <td>${last.toFixed(2)}</td>
@@ -83,10 +88,9 @@ async function analyze(){
             ? "Berücksichtigte Ereignisse: " + recentEvents.map(e=>`${e.description} (${(e.impact*100).toFixed(1)}%)`).join(", ")
             : "Keine besonderen Ereignisse in letzter Zeit.");
 
-        document.getElementById("fundamental").innerHTML =
+        document.getElementById("fundamental").textContent =
           `Grundlegende Stabilitätsprüfung (internes Filtermodell).`;
 
-        // KI-Genauigkeit aktualisieren
         updateKIAccuracyFromData(data);
 
         document.getElementById("status").textContent="Analyse abgeschlossen";
