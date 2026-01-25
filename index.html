@@ -8,8 +8,6 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
-
 <style>
 body {
   background:#0b0b0b;
@@ -91,7 +89,6 @@ th {background:#111;}
   gap:15px;
   margin-bottom:10px;
   font-size:0.9rem;
-  flex-wrap:wrap;
 }
 .legend-box div {
   display:flex; align-items:center; gap:4px;
@@ -99,11 +96,8 @@ th {background:#111;}
 .legend-color {
   width:12px; height:12px; border-radius:50%; display:inline-block;
 }
-@media screen and (max-width:768px) {
-  canvas {width:95%; height:auto;}
-  table, th, td {font-size:0.8rem;}
-  .controls {flex-direction:column; gap:8px;}
-  .info {flex-direction:column; gap:5px;}
+.future-select {
+  display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;
 }
 </style>
 </head>
@@ -122,9 +116,22 @@ th {background:#111;}
   <button onclick="setMode('aggressive')">🔴 Aggressiv</button>
 </div>
 
+<div class="future-select">
+  <label for="futureSelect">Prognosezeitraum:</label>
+  <select id="futureSelect">
+    <option value="7">1 Woche</option>
+    <option value="21">3 Wochen</option>
+    <option value="30">1 Monat</option>
+    <option value="90">3 Monate</option>
+    <option value="180">6 Monate</option>
+    <option value="365">1 Jahr</option>
+  </select>
+</div>
+
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
+  <div>Lernfortschritt: <b id="learning">–</b></div>
 </div>
 
 <div class="status" id="status">Bereit</div>
@@ -143,7 +150,6 @@ th {background:#111;}
   <th>Projektion</th>
   <th>Signal</th>
   <th>Abweichung</th>
-  <th>Zeitraum</th>
 </tr>
 </thead>
 <tbody id="result"></tbody>
@@ -155,7 +161,7 @@ th {background:#111;}
 </div>
 
 <div class="box">
-<h3>🏦 Fundamentale Einordnung & Aktuelle News</h3>
+<h3>🏦 Fundamentale Einordnung</h3>
 <div id="fundamental">–</div>
 </div>
 
@@ -163,7 +169,6 @@ th {background:#111;}
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
-<script src="selbstlernendeki.js"></script>
-
+<script src="selflernendeki.js"></script>
 </body>
 </html>
