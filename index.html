@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>KI AKTIEN HANDEL AG</title>
+<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
 <link rel="stylesheet" href="styles.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
 </head>
 <body>
 
-<h1>KI AKTIEN HANDEL AG</h1>
+<h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
 
 <div class="controls">
   <select id="stockSelect"></select>
@@ -25,10 +25,15 @@
 
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
-  <div>Genauigkeit: <b id="confidence">–</b></div>
+  <div>Konfidenz: <b id="confidence">–</b></div>
 </div>
 
 <div class="status" id="status">Bereit</div>
+
+<div class="legend-box">
+  <div><span class="legend-color" style="background:#00ff66"></span> Positives Ereignis</div>
+  <div><span class="legend-color" style="background:#ff5555"></span> Negatives Ereignis</div>
+</div>
 
 <canvas id="chart"></canvas>
 
