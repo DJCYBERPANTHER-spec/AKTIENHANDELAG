@@ -95,40 +95,48 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function createFeatures(data){
-    if(!data || data.length<15) return [];
+    if(!data || data.length < 15) return [];
     const features = [];
-    for(let i=1;i<data.length;i++){
-      if(!data[i] || data[i].price===undefined) continue;
-      const diff = data[i].price - data[i-1].price;
-      const rsi = RSI(data.slice(Math.max(0,i-14),i+1));
-      const macd = MACD(data.slice(0,i+1));
-      const vol = volatility(data.slice(Math.max(0,i-14),i+1));
-      const mom = momentum(data.slice(Math.max(0,i-7),i+1));
-      features.push([data[i-1].price,diff,rsi,macd,vol,mom]);
+    for(let i=1; i<data.length; i++){
+        const prev = data[i-1];
+        const curr = data[i];
+        if(!prev || !curr || prev.price === undefined || curr.price === undefined) continue;
+        const diff = curr.price - prev.price;
+        const rsi = RSI(data.slice(Math.max(0,i-14), i+1));
+        const macd = MACD(data.slice(0, i+1));
+        const vol = volatility(data.slice(Math.max(0,i-14), i+1));
+        const mom = momentum(data.slice(Math.max(0,i-7), i+1));
+        features.push([prev.price, diff, rsi, macd, vol, mom]);
     }
     return features;
   }
 
   async function predictML(data){
-    const features=createFeatures(data);
-    if(features.length===0) return {preds:[], upper:[], lower:[]};
+    const features = createFeatures(data);
+    if(!features || features.length === 0) return {preds:[], upper:[], lower:[]};
+    const validFeatures = features.filter(f => f.every(v => v !== undefined && !isNaN(v)));
+    if(validFeatures.length === 0) return {preds:[], upper:[], lower:[]};
 
-    const xs=tf.tensor2d(features);
-    const ys=tf.tensor2d(data.slice(1).map(d=>[d.price]));
-    if(!model) await initModel(features[0].length);
+    const xs = tf.tensor2d(validFeatures);
+    const ys = tf.tensor2d(data.slice(data.length - validFeatures.length).map(d => [d.price]));
+
+    if(!model) await initModel(validFeatures[0].length);
     await model.fit(xs, ys, {epochs:50, verbose:0});
 
-    const lastFeature=features[features.length-1];
+    const lastFeature = validFeatures[validFeatures.length-1];
     let preds=[], upper=[], lower=[];
-    let price=data[data.length-1].price;
-    for(let i=0;i<7;i++){
-      let pred = model.predict(tf.tensor2d([lastFeature])).dataSync()[0];
-      pred = price + (pred-price)*modeWeights[KI_MODE];
-      preds.push(pred);
-      upper.push(pred*1.03);
-      lower.push(pred*0.97);
-      price=pred;
+    let price = data[data.length-1]?.price || 0;
+
+    for(let i=0; i<7; i++){
+        let pred = model.predict(tf.tensor2d([lastFeature])).dataSync()[0];
+        if(isNaN(pred)) pred = price;
+        pred = price + (pred - price) * (modeWeights[KI_MODE] || 0.8);
+        preds.push(pred);
+        upper.push(pred*1.03);
+        lower.push(pred*0.97);
+        price = pred;
     }
+
     return {preds, upper, lower};
   }
 
@@ -150,13 +158,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const projData=[...data.map(d=>d.price), ...preds];
     const projLabels=[...data.map(d=>d.date), ...preds.map((_,i)=>`Day ${i+1}`)];
 
+    // Farbe Signal bestimmen
+    const last=data[data.length-1].price;
+    const pred=preds.length>0 ? preds[0] : last;
+    const d=(pred-last)/last;
+    const color = d>0.08 ? '#00ff66' : d<-0.08 ? '#ff5555' : '#ffaa00';
+
     chart=new Chart(document.getElementById("chart"),{
       type:"line",
       data:{
         labels:projLabels,
         datasets:[
           {label:"Preis (CHF)", data:data.map(d=>d.price), borderColor:"#00ffcc", tension:0.3},
-          {label:"Projektion", data:projData, borderColor:"#ffaa00", tension:0.3},
+          {label:"Projektion", data:projData, borderColor:color, tension:0.3},
           {label:"Konfidenzband Oben", data:[...Array(data.length).fill(null), ...upper], borderColor:"#00ffcc", borderDash:[5,5], fill:false},
           {label:"Konfidenzband Unten", data:[...Array(data.length).fill(null), ...lower], borderColor:"#ff5555", borderDash:[5,5], fill:false}
         ]
