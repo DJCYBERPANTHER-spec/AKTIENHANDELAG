@@ -86,8 +86,9 @@ th {background:#111;}
   width:12px; height:12px; border-radius:50%; display:inline-block;
 }
 
-/* Responsiv */
+/* Mobile Responsive */
 @media (max-width:768px){
-  canvas, table, .box { width:100%; }
-  .controls { flex-direction:column; }
+  canvas, table, .box {max-width:100%;}
+  .controls {flex-direction:column; align-items:center;}
+  .info {flex-direction:column; align-items:center;}
 }
