@@ -3,14 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>AKTIEN HANDEL AG</title>
+<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
+
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
 </head>
 <body>
 
-<h1>AKTIEN HANDEL AG</h1>
+<h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
 
 <div class="controls">
   <select id="stockSelect"></select>
@@ -18,16 +19,15 @@
 </div>
 
 <div class="controls">
-  <button onclick="setMode('safe')">🟢 Vorsichtig</button>
-  <button onclick="setMode('normal')">🟡 Normal</button>
-  <button onclick="setMode('aggressive')">🔴 Aggressiv</button>
+  <button id="safeBtn">🟢 Vorsichtig</button>
+  <button id="normalBtn">🟡 Normal</button>
+  <button id="aggressiveBtn">🔴 Aggressiv</button>
 </div>
 
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
-  <div>Analysen heute: <b id="dailyCount">0</b>/100</div>
-  <div>Lern-Faktor: <b id="learnFactor">1.00</b></div>
+  <div>Tagesprognosen: <b id="dailyCount">0/100</b></div>
 </div>
 
 <div class="status" id="status">Bereit</div>
@@ -43,13 +43,9 @@
 <thead>
 <tr>
   <th>Aktuell (CHF)</th>
+  <th>Projektion</th>
   <th>Signal</th>
-  <th>1W</th>
-  <th>3W</th>
-  <th>1M</th>
-  <th>3M</th>
-  <th>6M</th>
-  <th>1J</th>
+  <th>Abweichung</th>
 </tr>
 </thead>
 <tbody id="result"></tbody>
@@ -69,6 +65,11 @@
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
-<script type="module" src="main.js"></script>
+<script type="module" src="main_part1.js"></script>
+<script type="module" src="main_part2.js"></script>
+<script type="module" src="main_part3.js"></script>
+<script type="module" src="main_part4.js"></script>
+<script type="module" src="main_part5.js"></script>
+
 </body>
 </html>
