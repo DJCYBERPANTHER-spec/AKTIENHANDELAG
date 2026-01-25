@@ -1,38 +1,25 @@
-import { analyzeStock, setMode } from "./main_part3.js";
+/* ================= PREDICTION ================= */
+function predict(data){
+    const last = data[data.length-1].price;
+    let w = KI_MODE==="safe"?0.5:KI_MODE==="aggressive"?1.3:0.8;
+    let pred = last*(1+(EMA(data,10)-last)/last*0.5*w);
 
-// ================= TÄGLICHE PROGNOSEN =================
-const DAILY_KEY = "dailyPrognoses";
-const TODAY = new Date().toISOString().slice(0,10);
+    const rsi = RSI(data);
+    if(rsi>70) pred *= 0.97;
+    if(rsi<30) pred *= 1.03;
 
-// Prüfen wie viele Prognosen heute gemacht wurden
-export function dailyCount(){
-    const data = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    return data[TODAY] || 0;
+    const recentEvents = EVENTS.filter(e => data.some(d => d.date === e.date));
+    recentEvents.forEach(e => pred *= 1 + e.impact);
+
+    return {pred, recentEvents};
 }
 
-// Prognose-Zähler erhöhen
-export function incrementDailyCount(){
-    const data = JSON.parse(localStorage.getItem(DAILY_KEY) || '{}');
-    data[TODAY] = (data[TODAY] || 0) + 1;
-    localStorage.setItem(DAILY_KEY, JSON.stringify(data));
+function confidenceScore(data){
+    let s=60;
+    const macd = MACD(data);
+    const rsi = RSI(data);
+    if(Math.abs(macd)>0.5) s+=5;
+    if(rsi>40 && rsi<60) s+=5;
+    if(KI_MODE==="safe") s+=3;
+    return s>75?"Hoch":s>65?"Mittel":"Niedrig";
 }
-
-// ================= BUTTONS =================
-document.getElementById("safeBtn").addEventListener("click", ()=>setMode("safe"));
-document.getElementById("normalBtn").addEventListener("click", ()=>setMode("normal"));
-document.getElementById("aggressiveBtn").addEventListener("click", ()=>setMode("aggressive"));
-document.getElementById("analyzeBtn").addEventListener("click", analyzeStock);
-
-// ================= MOBILE SUPPORT =================
-function handleResize(){
-    const width = window.innerWidth;
-    const chartCanvas = document.getElementById("chart");
-    if(width < 600){
-        chartCanvas.style.maxWidth = "100%";
-    } else {
-        chartCanvas.style.maxWidth = "1200px";
-    }
-}
-
-window.addEventListener("resize", handleResize);
-window.addEventListener("load", handleResize);
