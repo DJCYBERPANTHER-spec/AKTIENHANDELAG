@@ -3,38 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YANNIC KÖBI AKTIEN HANDEL AG</title>
-
+<title>AKTIEN HANDEL AG</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@2"></script>
 </head>
 <body>
 
-<h1>YANNIC KÖBI AKTIEN HANDEL AG</h1>
+<h1>AKTIEN HANDEL AG</h1>
 
 <div class="controls">
   <select id="stockSelect"></select>
-  <select id="forecastSelect">
-    <option value="7">1 Woche</option>
-    <option value="21">3 Wochen</option>
-    <option value="30">1 Monat</option>
-    <option value="90">3 Monate</option>
-    <option value="180">6 Monate</option>
-    <option value="365">1 Jahr</option>
-  </select>
   <button id="analyzeBtn">Analyse starten</button>
 </div>
 
 <div class="controls">
-  <button data-mode="safe">🟢 Vorsichtig</button>
-  <button data-mode="normal">🟡 Normal</button>
-  <button data-mode="aggressive">🔴 Aggressiv</button>
+  <button onclick="setMode('safe')">🟢 Vorsichtig</button>
+  <button onclick="setMode('normal')">🟡 Normal</button>
+  <button onclick="setMode('aggressive')">🔴 Aggressiv</button>
 </div>
 
 <div class="info">
   <div>Modus: <b id="mode">Normal</b></div>
   <div>Konfidenz: <b id="confidence">–</b></div>
+  <div>Analysen heute: <b id="dailyCount">0</b>/100</div>
+  <div>Lern-Faktor: <b id="learnFactor">1.00</b></div>
 </div>
 
 <div class="status" id="status">Bereit</div>
@@ -50,9 +43,13 @@
 <thead>
 <tr>
   <th>Aktuell (CHF)</th>
-  <th>Projektion</th>
   <th>Signal</th>
-  <th>Abweichung</th>
+  <th>1W</th>
+  <th>3W</th>
+  <th>1M</th>
+  <th>3M</th>
+  <th>6M</th>
+  <th>1J</th>
 </tr>
 </thead>
 <tbody id="result"></tbody>
@@ -68,37 +65,10 @@
 <div id="fundamental">–</div>
 </div>
 
-<div class="box">
-<h3>📈 Aktuelle Nachrichten & Events</h3>
-<div id="news">–</div>
-</div>
-
 <div class="footer">
 Interne Analyse • Entscheidungsunterstützung • Keine Anlageberatung
 </div>
 
-<script type="module">
-import { initializeStocks } from './stocks.js';
-import { setMode } from './mode.js';
-import { analyze } from './prognoseKI.js';
-
-const stockSelect = document.getElementById('stockSelect');
-const forecastSelect = document.getElementById('forecastSelect');
-const analyzeBtn = document.getElementById('analyzeBtn');
-const modeButtons = document.querySelectorAll('[data-mode]');
-
-initializeStocks(stockSelect);
-
-modeButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    setMode(btn.dataset.mode);
-  });
-});
-
-analyzeBtn.addEventListener('click', () => {
-  analyze(stockSelect, { value: document.getElementById('mode').textContent.toLowerCase() }, forecastSelect);
-});
-</script>
-
+<script type="module" src="main.js"></script>
 </body>
 </html>
